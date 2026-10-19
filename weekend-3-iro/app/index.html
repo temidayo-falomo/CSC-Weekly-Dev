@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>IRO | Issues Reporting Outlet</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="model.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+<header><a class="brand" href="#">IRO<span>Issues Reporting Outlet</span></a><span class="badge">CSC426 · Weekend 3</span></header>
+<main>
+  <section class="hero"><div><p class="eyebrow">AAUA & OUR HOST COMMUNITIES</p><h1>A clearer way<br>to raise a concern.</h1><p>For students and indigenes of Akungba, Iwaro, Etioro, Ayegunle and neighbouring communities.</p></div><aside><span class="status-dot"></span> ACADEMIC PROTOTYPE<p>Reports stay in this browser. They are not sent to AAUA or any authority. Use fictional details only.</p><small>For immediate danger, contact appropriate local emergency services directly.</small></aside></section>
+  <nav aria-label="Main views"><button data-tab="report" aria-selected="true">Report an issue</button><button data-tab="track" aria-selected="false">Track a report</button><button data-tab="staff" aria-selected="false">Staff demo</button></nav>
+  <section id="report" class="panel"><div class="section-heading"><div><p class="eyebrow">01 / MAKE YOUR VOICE HEARD</p><h2>Tell us what happened</h2></div><p>Fields marked * are required.</p></div>
+  <form id="report-form">
+    <div class="grid"><label>Your community role *<select name="role" required><option value="">Select a role</option><option>Student</option><option>Indigene</option><option>Both student and indigene</option></select></label><label>Community affected *<select name="community" required><option value="">Select a community</option><option>Akungba</option><option>Iwaro</option><option>Etioro</option><option>Ayegunle</option><option>Other neighbouring community</option></select></label>
+    <label>Issue category *<select name="category" required><option value="">Select a category</option><option>Safety and security</option><option>Housing and accommodation</option><option>Water and electricity</option><option>Sanitation and environment</option><option>Transport and roads</option><option>Student-community relations</option><option>Other</option></select></label><label>Priority *<select name="priority" required><option>Normal</option><option>High</option></select></label></div>
+    <label>Issue title *<input name="title" required minlength="5" maxlength="100" placeholder="e.g. Broken streetlight near the hostel"></label>
+    <label>Location *<input name="location" required minlength="3" maxlength="150" placeholder="Use a general landmark; avoid private addresses"></label>
+    <label>Description *<textarea name="description" required minlength="20" maxlength="2000" rows="5" placeholder="Describe the issue and its impact. Do not include names, accusations or sensitive personal information."></textarea></label>
+    <label class="check"><input name="consent" type="checkbox" required> I understand this is a local demo and I am using fictional, non-sensitive information. *</label>
+    <div class="form-footer"><span>No name or matric number is collected from reporters.</span><button class="primary" type="submit">Create report <span aria-hidden="true">↗</span></button></div>
+  </form><div id="report-result" role="status" aria-live="polite"></div></section>
+  <section id="track" class="panel" hidden><p class="eyebrow">02 / FOLLOW THE PROGRESS</p><h2>Track your report</h2><p>Use the reference shown after submission. Keep it private: anyone using this browser with that reference can view the report.</p><form id="track-form" class="inline-form"><label>Report reference<input name="reference" required maxlength="50" placeholder="IRO-…"></label><button type="submit" class="primary">Find report</button></form><div id="track-result" role="status" aria-live="polite"></div></section>
+  <section id="staff" class="panel" hidden><p class="eyebrow">03 / STAFF WORKFLOW PREVIEW</p><h2>Community issue desk</h2><p class="notice">Demonstration only. There is no login or access control. Anyone using this browser can view reports and change their status.</p><div class="stats" id="stats"></div><div class="filters"><label>Status filter<select id="status-filter"><option>All</option><option>Submitted</option><option>Under review</option><option>Resolved</option><option>Rejected</option></select></label><button type="button" id="load-demo">Add fictional sample reports</button></div><div id="report-list"></div></section>
+  <p id="global-error" class="error" role="alert"></p>
+</main>
+<footer><span>Temidayo Ayomide Falomo · 220404260</span><span>IRO / CSC426 academic project</span></footer>
+</body></html>

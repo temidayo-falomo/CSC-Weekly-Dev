@@ -1,0 +1,618 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>IRO - CSC426 Print Manual</title><style>@page{size:A4;margin:17mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10pt;line-height:1.4;color:#173c37;max-width:190mm;margin:20px auto}h1{font-size:18pt;border-bottom:2px solid #173c37;padding-bottom:8px}h2{font-size:12pt;margin-top:20px}h3,h4{font-size:10pt}p{margin:7px 0}.bullet{margin-left:10px}table{border-collapse:collapse;width:100%;font-size:10pt}td{border:1px solid #bbc9c0;padding:5px;vertical-align:top;overflow-wrap:anywhere}tr{break-inside:avoid}tr:first-child{font-weight:bold;background:#f0f4e8}section{break-before:page}pre{font-family:monospace;font-size:10pt;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;color:#17251d}code{font-size:10pt}svg{width:100%;height:auto}.cover{padding-top:55mm;min-height:245mm}.cover h1{font-size:32pt}.muted{color:#5b6a61}.screen{padding:12px;background:#f0f4e8}@media print{body{margin:0;max-width:none}.screen{display:none}a{color:inherit;text-decoration:none}}</style><body>
+<p class="screen">Print on A4 at 100% scale. Turn browser headers/footers off. Body and source text are 10pt. Print after lecturer acknowledgment.</p>
+<div class="cover"><p>CSC426 / WEEKEND 3</p><h1>IRO<br>Issues Reporting Outlet</h1><p>Software requirements, diagrams, object listing and code listing</p><h2>Temidayo Ayomide Falomo</h2><p>Matric number: <strong>220404260</strong></p><p>Prepared: 19 October 2026</p><p class="muted">Academic browser prototype for AAUA students and host-community indigenes.</p></div>
+<section><h1>Software Requirements Specification</h1>
+<h2>1. Identification</h2>
+<p><strong>System:</strong> IRO - Issues Reporting Outlet  </p>
+<p><strong>Author:</strong> Temidayo Ayomide Falomo  </p>
+<p><strong>Matric number:</strong> 220404260  </p>
+<p><strong>Course:</strong> CSC426, Weekend 3  </p>
+<p><strong>Document version:</strong> 1.0  </p>
+<p><strong>Prepared:</strong> 19 October 2026</p>
+<h2>2. Purpose and scope</h2>
+<p>IRO demonstrates how AAUA students and indigenes can report issues affecting their shared communities and follow their progress. It covers Akungba, Iwaro, Etioro, Ayegunle and other neighbouring communities. Examples include infrastructure, sanitation, housing, transport, safety and student-community relations.</p>
+<p>The deliverable is a deliberately small browser application. The implemented scope is report capture, local persistence, reference lookup, a staff workflow demonstration, filtering and status history. It excludes live authority routing, emergency dispatch, private messaging, attachments, user accounts, email and a shared server database.</p>
+<p>The staff workflow is a simulation. It must not be described as secure administration. The interface prominently instructs users to enter fictional data because all records are stored on the same device without authentication.</p>
+<h2>3. Stakeholders and elicitation</h2>
+<p class="bullet">&#8226; Students: raise concerns affecting study, housing, travel and welfare.</p>
+<p class="bullet">&#8226; Indigenes: raise concerns affecting residents and their relationship with students.</p>
+<p class="bullet">&#8226; People belonging to both groups: must be able to identify both roles.</p>
+<p class="bullet">&#8226; Proposed authorized issue officers: review and act on reports in a future live system.</p>
+<p class="bullet">&#8226; Course assessor: reviews application behavior and supporting documentation.</p>
+<p>The prepared questionnaire distinguishes these groups, asks about current reporting channels and barriers, and gathers preferences. No survey distribution, responses or empirical conclusions are claimed. The Ishikawa causes are hypotheses to validate using questionnaire responses and stakeholder interviews.</p>
+<h2>4. Operating environment and assumptions</h2>
+<p>A modern browser with JavaScript, Web Crypto randomUUID and localStorage, served from localhost or HTTPS. A simple Python HTTP server is sufficient for the demonstration. No installation of application dependencies is necessary. Node.js runs the supplied model tests. Browser storage must be enabled and users must reuse the same browser and origin. Browser records can be removed through the browser&#x27;s site-data controls.</p>
+<p>The prototype is intended for a single user/device at a time. Simultaneous tabs are not synchronized and may overwrite each other&#x27;s latest changes. No assumption is made that the project has authority to receive real reports on behalf of AAUA or host communities.</p>
+<h2>5. System components and interaction</h2>
+<p>1. Reporting interface (<code>index.html</code> and <code>styles.css</code>): captures role, affected community, issue details and demo consent.</p>
+<p>2. Domain model (<code>model.js</code>): validates enumerations and trimmed text, constructs reports, and enforces status transitions.</p>
+<p>3. Interaction controller (<code>app.js</code>): connects forms to the model, persists records, switches views and renders results.</p>
+<p>4. Browser storage: holds a JSON array under <code>iro.weekend3.v1</code> for the current browser origin.</p>
+<p>5. Tracking view: retrieves a report from memory by its exact reference and displays status history.</p>
+<p>6. Staff demonstration view: lists and filters local reports, shows status counts and requests validated status changes with notes.</p>
+<p>Report flow: user input -&gt; browser form checks -&gt; model validation -&gt; new report and initial history -&gt; storage write -&gt; confirmation. The in-memory state changes only after a successful storage write. Tracking uses the same stored records after page reload. A staff action passes through transition validation before the replacement record is saved.</p>
+<h2>6. Functional requirements: implemented prototype</h2>
+<p class="bullet">&#8226; <strong>FR-01 Role capture:</strong> The form shall accept Student, Indigene, or Both student and indigene. Verify by selecting and submitting each role.</p>
+<p class="bullet">&#8226; <strong>FR-02 Community capture:</strong> The form shall accept Akungba, Iwaro, Etioro, Ayegunle, or Other neighbouring community.</p>
+<p class="bullet">&#8226; <strong>FR-03 Issue capture:</strong> The form shall collect category, Normal/High priority, title, general location and description. It shall not request the reporter&#x27;s name, matric number or contact information.</p>
+<p class="bullet">&#8226; <strong>FR-04 Validation:</strong> The system shall require a valid role, community, category and priority, a trimmed 5-100 character title, 3-150 character location, 20-2000 character description and explicit fictional-data consent. Invalid values shall not be stored.</p>
+<p class="bullet">&#8226; <strong>FR-05 Creation:</strong> A valid submission shall receive an IRO-prefixed random UUID reference, Submitted status, an ISO timestamp and its first history event.</p>
+<p class="bullet">&#8226; <strong>FR-06 Persistence:</strong> Reports shall be serialized to localStorage. If a write fails, the system shall show an error and retain the previous in-memory state.</p>
+<p class="bullet">&#8226; <strong>FR-07 Tracking:</strong> A user shall retrieve a local report by reference, ignoring surrounding whitespace and letter case. Unknown references shall produce a clear no-match message.</p>
+<p class="bullet">&#8226; <strong>FR-08 Staff overview:</strong> The demonstration view shall list all local reports, filter by status and display counts for all four statuses.</p>
+<p class="bullet">&#8226; <strong>FR-09 Status control:</strong> Permitted transitions shall be Submitted -&gt; Under review or Rejected; Under review -&gt; Resolved or Rejected. Resolved and Rejected shall be terminal in this prototype.</p>
+<p class="bullet">&#8226; <strong>FR-10 History:</strong> Every status change shall require a trimmed 1-300 character note and append a timestamped history event without modifying prior events.</p>
+<p class="bullet">&#8226; <strong>FR-11 Sample data:</strong> The user shall be able to add two explicitly fictional sample reports, representing a student and an indigene, without duplicate sample IDs.</p>
+<p class="bullet">&#8226; <strong>FR-12 Notices:</strong> Each user shall be informed that the application is a local demo, staff access is unrestricted, reports are not sent to authorities and real sensitive information must not be entered.</p>
+<h2>7. Non-functional requirements: prototype acceptance targets</h2>
+<p class="bullet">&#8226; <strong>NFR-01 Usability:</strong> The three views shall have clear labels and show feedback after submission, lookup or storage failure.</p>
+<p class="bullet">&#8226; <strong>NFR-02 Responsive layout:</strong> At 375px and 1280px viewport widths, the form shall fit the viewport and remain usable without horizontal scrolling.</p>
+<p class="bullet">&#8226; <strong>NFR-03 Accessibility:</strong> Form controls shall have visible labels, the interface shall be keyboard operable, focus indicators shall be visible and feedback shall use live/status or alert regions. These are acceptance targets, not a claim of certified WCAG conformance.</p>
+<p class="bullet">&#8226; <strong>NFR-04 Input rendering:</strong> Reporter-controlled content shall be inserted as text nodes, never interpreted as HTML.</p>
+<p class="bullet">&#8226; <strong>NFR-05 Data minimization:</strong> The application shall request no direct reporter identifiers and shall make no network requests to submit reports. Free text can still contain personal information, hence the fictional-data warning.</p>
+<p class="bullet">&#8226; <strong>NFR-06 Reliability:</strong> Invalid state changes shall be rejected. Storage errors shall be visible. Persistence is limited to the browser profile and is not a backup guarantee.</p>
+<p class="bullet">&#8226; <strong>NFR-07 Performance:</strong> For an illustrative dataset of up to 100 local reports, submission, tracking and filtering should complete within one second on the demonstration device; this target must be measured before being claimed as achieved.</p>
+<p class="bullet">&#8226; <strong>NFR-08 Maintainability:</strong> Markup, styling, UI logic and domain validation shall remain in separate files; core domain rules shall have executable regression tests.</p>
+<p class="bullet">&#8226; <strong>NFR-09 Portability:</strong> The prototype shall use standard HTML, CSS and JavaScript without external packages or services. It requires a modern browser and a secure context for randomUUID.</p>
+<h2>8. Data dictionary</h2>
+<p><strong>Report:</strong> id (unique string), role (enumeration), community (enumeration), category (enumeration), priority (Normal/High), title (5-100 characters), location (3-150 characters), description (20-2000 characters), status (Submitted/Under review/Resolved/Rejected), createdAt (ISO timestamp), history (ordered list of HistoryEvent objects).</p>
+<p><strong>HistoryEvent:</strong> status (status enumeration), at (ISO timestamp), note (text). The initial note is system-generated; later notes are required and limited to 300 characters.</p>
+<p><strong>Consent:</strong> required transient boolean checked before creation; not stored as a reporter identifier or a legal consent record.</p>
+<p><strong>Storage:</strong> JSON array in localStorage, key <code>iro.weekend3.v1</code>. No passwords, files, phone numbers or names are intentionally collected. IDs are lookup references, not access-control credentials.</p>
+<h2>9. Use cases and exception handling</h2>
+<p><strong>UC-01 Submit issue:</strong> Reporter completes the form and consent; system validates, saves and returns a reference. Invalid input leaves the form for correction. Failed storage displays an error without claiming success.</p>
+<p><strong>UC-02 Track issue:</strong> Reporter supplies a reference; system displays the matching record and history. Unknown references show a no-match message explaining device/browser dependence.</p>
+<p><strong>UC-03 Review queue:</strong> Staff-demo user opens the overview and optionally filters by status. Empty results show guidance.</p>
+<p><strong>UC-04 Update status:</strong> Staff-demo user selects an allowed transition and supplies a note. System saves the new state and appends history. Disallowed transitions or missing notes produce errors.</p>
+<p><strong>UC-05 Add sample records:</strong> Demonstrator loads the two fictional examples. Existing sample references are not added again.</p>
+<p>The use-case diagram depicts prototype actors and actions. In this version a staff-demo user is any person using the browser; production authorization is not implemented.</p>
+<h2>10. Proposed live-system requirements - not implemented</h2>
+<p class="bullet">&#8226; Authenticated, individually identifiable staff with server-enforced roles and authorization on every report and status update.</p>
+<p class="bullet">&#8226; A protected server database, TLS transport, server-side validation, controlled access to sensitive records, backups and audit events resistant to browser tampering.</p>
+<p class="bullet">&#8226; A documented lawful basis, privacy notice, retention and deletion schedule, complaint-handling policy and responsible operator.</p>
+<p class="bullet">&#8226; Verified escalation and moderation procedures; clear boundaries between general complaints, allegations and emergencies.</p>
+<p class="bullet">&#8226; Secure reporter access and recovery, without exposing private reports through a public reference alone.</p>
+<p class="bullet">&#8226; Approved authority assignments, cross-device tracking and notifications if stakeholders request them.</p>
+<p>These requirements require further elicitation and operational agreement before live deployment. The prototype does not satisfy them.</p>
+<h2>11. Verification and acceptance</h2>
+<p>Automated domain tests cover initial state, identifier-field isolation, supported roles, invalid input, consent, valid transitions, audit history, terminal states and note bounds. Run <code>node --test tests/model.test.cjs</code> from the project directory.</p>
+<p>Manual checks to record before assessment: submit all three roles; inspect the confirmation; track a known and unknown reference; reload and track again; filter the staff list; reject and resolve reports through permitted paths; test sample deduplication; enter HTML-like text and confirm it renders literally; test keyboard navigation, a 375px layout and a 1280px layout; disable storage and verify clear failure feedback. Do not mark these manual checks as passed until actually performed.</p>
+<p>Acceptance requires the mini app to demonstrate the documented flow, editable diagrams to open in draw.io, the questionnaire to be created in Google Forms, and all required files to be present in the GitHub repository. Questionnaire distribution, survey findings, a successful remote push and lecturer acknowledgment are separate external completion steps.</p></section>
+<section><h1>Ishikawa diagram</h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img"><title>Ishikawa problem analysis</title><rect width="100%" height="100%" fill="white"/><text x="600.0" y="40.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="24" fill="#173c37">IRO / ISHIKAWA PROBLEM ANALYSIS</text><text x="600.0" y="87.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="17" fill="#173c37">Candidate causes to validate through questionnaire responses and interviews</text><path d="M50 365 L970 365" fill="none" stroke="#173c37" stroke-width="2"/><polyline points="959.1946347717678,370.21958640933474 970,365 959.1946347717678,359.78041359066526" fill="none" stroke="#173c37" stroke-width="2"/><rect x="70" y="135" width="250" height="40" rx="10" fill="#f0f4e8" stroke="#173c37"/><text x="195.0" y="155.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="20" fill="#173c37">People</text><text x="195.0" y="209.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Unclear responsible contact</text><text x="195.0" y="230.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Reluctance to report</text><text x="195.0" y="250.79999999999998" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Digital-literacy barriers</text><path d="M120 285 L210 365" fill="none" stroke="#173c37" stroke-width="2"/><rect x="360" y="135" width="250" height="40" rx="10" fill="#f0f4e8" stroke="#173c37"/><text x="485.0" y="155.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="20" fill="#173c37">Process</text><text x="485.0" y="209.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Informal verbal reports</text><text x="485.0" y="230.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">No tracking reference</text><text x="485.0" y="250.79999999999998" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Unclear follow-up</text><path d="M410 285 L500 365" fill="none" stroke="#173c37" stroke-width="2"/><rect x="650" y="135" width="250" height="40" rx="10" fill="#f0f4e8" stroke="#173c37"/><text x="775.0" y="155.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="20" fill="#173c37">Technology</text><text x="775.0" y="209.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Scattered reporting channels</text><text x="775.0" y="230.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Poor internet access</text><text x="775.0" y="250.79999999999998" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Difficult interfaces</text><path d="M700 285 L790 365" fill="none" stroke="#173c37" stroke-width="2"/><rect x="70" y="565" width="250" height="40" rx="10" fill="#f0f4e8" stroke="#173c37"/><text x="195.0" y="585.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="20" fill="#173c37">Information</text><text x="195.0" y="639.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Incomplete descriptions</text><text x="195.0" y="660.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Missing location</text><text x="195.0" y="680.8000000000001" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Unclear issue categories</text><path d="M120 555 L210 365" fill="none" stroke="#173c37" stroke-width="2"/><rect x="360" y="565" width="250" height="40" rx="10" fill="#f0f4e8" stroke="#173c37"/><text x="485.0" y="585.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="20" fill="#173c37">Governance</text><text x="485.0" y="639.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Unclear issue ownership</text><text x="485.0" y="660.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">No escalation policy</text><text x="485.0" y="680.8000000000001" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Weak accountability</text><path d="M410 555 L500 365" fill="none" stroke="#173c37" stroke-width="2"/><rect x="650" y="565" width="250" height="40" rx="10" fill="#f0f4e8" stroke="#173c37"/><text x="775.0" y="585.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="20" fill="#173c37">Environment</text><text x="775.0" y="639.2" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Shared infrastructure strain</text><text x="775.0" y="660.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Distance between communities</text><text x="775.0" y="680.8000000000001" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Student-resident tensions</text><path d="M700 555 L790 365" fill="none" stroke="#173c37" stroke-width="2"/><rect x="975" y="295" width="210" height="140" rx="10" fill="#d9f078" stroke="#173c37"/><text x="1080.0" y="340.3" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="19" fill="#173c37">Delayed or ineffective</text><text x="1080.0" y="365.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="19" fill="#173c37">handling of student</text><text x="1080.0" y="389.7" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="19" fill="#173c37">and community issues</text><text x="600.0" y="690.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="16" fill="#173c37">Hypotheses only: no survey findings are claimed.</text></svg><h1>Ishikawa problem analysis</h1>
+<p><strong>Effect:</strong> Delayed or ineffective handling of issues affecting AAUA students and host-community indigenes.</p>
+<p>The six branches below are <strong>candidate causes</strong>, not findings from a completed survey. Validate them with the prepared questionnaire and, where appropriate, interviews.</p>
+<table><tbody>
+<tr><td>Branch</td><td>Candidate causes</td><td>How to investigate</td><td>Prototype response</td></tr>
+<tr><td>People</td><td>Unclear responsible contact; reluctance to report; language or digital-literacy barriers</td><td>Awareness, barriers and language questions</td><td>Simple labelled form, explicit roles; multilingual support deferred</td></tr>
+<tr><td>Process</td><td>Informal verbal reporting; no reference; unclear follow-up</td><td>Current channel and satisfaction questions</td><td>Reference, tracking and explicit workflow</td></tr>
+<tr><td>Technology</td><td>Scattered channels; poor connectivity; difficult interfaces</td><td>Device and connectivity questions</td><td>Small interface with no external app dependencies; shared/offline sync deferred</td></tr>
+<tr><td>Information</td><td>Incomplete location or description; missing category</td><td>Required-detail preferences</td><td>Structured fields and validation</td></tr>
+<tr><td>Governance</td><td>Unclear ownership; no escalation policy; weak accountability</td><td>Interviews with proposed responsible officers</td><td>Status notes/history in demo; operational governance deferred</td></tr>
+<tr><td>Environment</td><td>Shared infrastructure problems; distance between communities; strained relationships</td><td>Issue frequency and affected-community questions</td><td>Community/category capture; issue resolution remains an operational task</td></tr>
+</tbody></table>
+<p>The diagram is <code>../diagrams/ishikawa.drawio</code>. A digital interface may improve capture and visibility, but does not itself fix infrastructure, establish legitimate authority or guarantee resolution.</p></section>
+<section><h1>Use-case diagram</h1><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img"><title>IRO prototype use cases</title><rect width="100%" height="100%" fill="white"/><text x="600.0" y="35.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="24" fill="#173c37">IRO / PROTOTYPE USE-CASE DIAGRAM</text><rect x="245" y="85" width="740" height="735" rx="10" fill="#ffffff" stroke="#173c37"/><text x="615.0" y="452.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="1" fill="#173c37">IRO browser prototype</text><text x="620.0" y="112.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="20" fill="#173c37">IRO browser prototype</text><g fill="none" stroke="#173c37" stroke-width="2"><circle cx="115.0" cy="216" r="14"/><path d="M115.0 230v40m-25 -25h50m-25 25l-25 30m25 -30l25 30"/></g><text x="115.0" y="316.45" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="17" fill="#173c37">Reporter</text><text x="115.0" y="338.55" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="17" fill="#173c37">Student / indigene / both</text><g fill="none" stroke="#173c37" stroke-width="2"><circle cx="1095.0" cy="501" r="14"/><path d="M1095.0 515v40m-25 -25h50m-25 25l-25 30m25 -30l25 30"/></g><text x="1095.0" y="601.45" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="17" fill="#173c37">Staff-demo user</text><text x="1095.0" y="623.5500000000001" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="17" fill="#173c37">Unrestricted demonstration</text><ellipse cx="420.0" cy="215.0" rx="120.0" ry="40.0" fill="#f0f4e8" stroke="#173c37"/><text x="420.0" y="215.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="18" fill="#173c37">Submit issue</text><ellipse cx="420.0" cy="370.0" rx="120.0" ry="40.0" fill="#f0f4e8" stroke="#173c37"/><text x="420.0" y="370.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="18" fill="#173c37">Track issue</text><ellipse cx="785.0" cy="485.0" rx="125.0" ry="40.0" fill="#f0f4e8" stroke="#173c37"/><text x="785.0" y="485.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="18" fill="#173c37">View / filter queue</text><ellipse cx="785.0" cy="625.0" rx="125.0" ry="40.0" fill="#f0f4e8" stroke="#173c37"/><text x="785.0" y="625.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="18" fill="#173c37">Update status</text><ellipse cx="785.0" cy="745.0" rx="125.0" ry="35.0" fill="#f0f4e8" stroke="#173c37"/><text x="785.0" y="745.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="18" fill="#173c37">Add fictional samples</text><ellipse cx="775.0" cy="205.0" rx="125.0" ry="40.0" fill="#f0f4e8" stroke="#173c37"/><text x="775.0" y="205.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="18" fill="#173c37">Validate input</text><ellipse cx="775.0" cy="325.0" rx="125.0" ry="40.0" fill="#f0f4e8" stroke="#173c37"/><text x="775.0" y="325.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="18" fill="#173c37">Generate reference</text><ellipse cx="430.0" cy="625.0" rx="130.0" ry="40.0" fill="#f0f4e8" stroke="#173c37"/><text x="430.0" y="625.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="18" fill="#173c37">Record status history</text><path d="M145 255 L300 215" fill="none" stroke="#173c37" stroke-width="2"/><path d="M145 270 L300 370" fill="none" stroke="#173c37" stroke-width="2"/><path d="M1055 540 L910 485" fill="none" stroke="#173c37" stroke-width="2"/><path d="M1055 550 L910 625" fill="none" stroke="#173c37" stroke-width="2"/><path d="M1055 570 L910 745" fill="none" stroke="#173c37" stroke-width="2"/><path d="M540 200 L650 200" fill="none" stroke="#173c37" stroke-width="2" stroke-dasharray="7 5"/><polyline points="639.1946347717678,205.21958640933477 650,200 639.1946347717678,194.78041359066523" fill="none" stroke="#173c37" stroke-width="2"/><text x="595.0" y="190.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="14" fill="#173c37">&lt;&lt;include&gt;&gt;</text><path d="M535 240 L650 315" fill="none" stroke="#173c37" stroke-width="2" stroke-dasharray="7 5"/><polyline points="638.0980196989211,313.4693580063484 650,315 643.8006034653215,304.72539623120116" fill="none" stroke="#173c37" stroke-width="2"/><text x="592.5" y="268.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="14" fill="#173c37">&lt;&lt;include&gt;&gt;</text><path d="M660 625 L560 625" fill="none" stroke="#173c37" stroke-width="2" stroke-dasharray="7 5"/><polyline points="570.8053652282322,619.7804135906653 560,625 570.8053652282322,630.2195864093347" fill="none" stroke="#173c37" stroke-width="2"/><text x="610.0" y="615.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="14" fill="#173c37">&lt;&lt;include&gt;&gt;</text><text x="600.0" y="857.5" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="17" fill="#173c37">Production staff authentication and authority routing are outside this prototype.</text></svg><h1>Use cases</h1>
+<p><strong>System boundary:</strong> IRO browser prototype.  </p>
+<p><strong>Actors:</strong> Reporter (student, indigene, or both); staff-demo user (unrestricted local demonstration).</p>
+<table><tbody>
+<tr><td>ID</td><td>Actor</td><td>Goal</td><td>Main result</td></tr>
+<tr><td>UC-01</td><td>Reporter</td><td>Submit a fictional issue</td><td>Stored report and reference</td></tr>
+<tr><td>UC-02</td><td>Reporter</td><td>Track a report</td><td>Details, current status and history</td></tr>
+<tr><td>UC-03</td><td>Staff-demo user</td><td>View/filter local reports</td><td>Matching report queue and counts</td></tr>
+<tr><td>UC-04</td><td>Staff-demo user</td><td>Update report status with a note</td><td>Valid transition and appended history</td></tr>
+<tr><td>UC-05</td><td>Staff-demo user</td><td>Add fictional sample records</td><td>Two demo issues, without duplicates</td></tr>
+</tbody></table>
+<p>UC-01 includes validation and reference generation. UC-04 includes transition validation and history recording. Both invoke persistence only after validation; failed writes do not update in-memory state. The included actions are mandatory substeps, not separate actors.</p>
+<p>Preconditions: page loaded, JavaScript available, browser storage available for mutation, fictional data only. UC-02 requires a report saved in the same browser/origin. UC-04 requires a report in a nonterminal status.</p>
+<p>The editable UML-style use-case diagram is <code>../diagrams/use-case.drawio</code>. No login use case is depicted because authentication is outside the implemented prototype.</p></section>
+<section><h1>Object listing</h1>
+<p>This JavaScript prototype uses plain objects and DOM objects rather than an object-oriented class hierarchy.</p>
+<table><tbody>
+<tr><td>Object/module</td><td>Key fields or operations</td><td>Responsibility</td></tr>
+<tr><td>Report</td><td>id, role, community, category, priority, title, location, description, status, createdAt, history</td><td>Holds one issue and its current state</td></tr>
+<tr><td>HistoryEvent</td><td>status, at, note</td><td>Records creation or one status change</td></tr>
+<tr><td>IRO model</td><td>roles, communities, categories, transitions, validate(), create(), update()</td><td>Validates data and controls workflow</td></tr>
+<tr><td>reports array</td><td>Report[]</td><td>In-memory snapshot of saved reports</td></tr>
+<tr><td>localStorage</td><td>key iro.weekend3.v1; JSON string</td><td>Per-origin browser persistence</td></tr>
+<tr><td>Reporting form</td><td>role, community, category, priority, title, location, description, consent</td><td>Collects fictional report details</td></tr>
+<tr><td>Tracking form</td><td>reference</td><td>Requests exact local lookup</td></tr>
+<tr><td>Staff action form</td><td>selected next status, note</td><td>Requests a validated state change</td></tr>
+<tr><td>DOM rendering helpers</td><td>el(), detail(), renderStaff(), displayDate()</td><td>Displays safe text, lists, counts and history</td></tr>
+<tr><td>Persistence helper</td><td>save(next)</td><td>Commits storage before replacing memory</td></tr>
+<tr><td>Questionnaire form</td><td>Google Form items and response sheet</td><td>Future requirements elicitation, separate from app storage</td></tr>
+</tbody></table>
+<p>Report ownership, authenticated staff accounts and a shared database are proposed live-system objects, not implemented objects in this submission.</p></section>
+<section><h1>IRO community requirements questionnaire</h1>
+<p><strong>Researcher:</strong> Temidayo Ayomide Falomo, 220404260, CSC426.  </p>
+<p><strong>Purpose:</strong> Understand reporting needs among AAUA students and host-community indigenes.  </p>
+<p><strong>Status:</strong> Questionnaire prepared; Google Form creation and distribution are pending. No responses or findings are claimed.</p>
+<h2>Google Forms setup</h2>
+<p>1. Open https://script.google.com/ and create a new project in your own Google account.</p>
+<p>2. Copy <code>create-google-form.gs</code> into the script editor, save, choose <code>createIroQuestionnaire</code>, and run it. Review Google&#x27;s authorization request. It creates one Form and one linked response spreadsheet; it sends no invitations.</p>
+<p>3. Open the execution log for the edit URL, respondent URL and response spreadsheet URL. Running again reuses the same saved Form instead of duplicating it.</p>
+<p>4. Preview the Form. Verify declining consent exits the questionnaire and all three role options are present. Keep automatic email collection disabled. Check your account&#x27;s responder-access restrictions and publish the Form if required by its UI.</p>
+<p>5. Copy the actual respondent URL here and into the repository guide. Share it with consenting students and indigenes using a channel you are authorized to use.</p>
+<p><strong>Respondent URL:</strong> Not yet created.  </p>
+<p><strong>Distribution log:</strong> Not yet distributed. Record date, channels and intended groups after distribution; avoid publishing respondents&#x27; identities or raw sensitive responses in GitHub.</p>
+<h2>Introduction and consent</h2>
+<p>This voluntary academic survey takes about 3-5 minutes. It asks how students and indigenes report community issues. Do not provide your name, matric number, phone number, private addresses, names of accused people or details of sensitive incidents. You may skip optional questions or exit without submitting. Submitted responses are stored in the researcher&#x27;s Google account and may be reviewed for course assessment. The researcher should agree a retention period and communicate it before distribution. This is not an emergency or complaints reporting channel.</p>
+<table><tbody>
+<tr><td>No.</td><td>Question</td><td>Type</td><td>Required / options</td></tr>
+<tr><td>1</td><td>Do you voluntarily agree to participate?</td><td>Multiple choice with branching</td><td>Required: Yes, continue / No, end questionnaire</td></tr>
+<tr><td>2</td><td>Which best describes your relationship to the community?</td><td>Multiple choice</td><td>Required: AAUA student / Indigene / Both AAUA student and indigene / Neither</td></tr>
+<tr><td>3</td><td>Which community do your answers mainly relate to?</td><td>Multiple choice</td><td>Required: Akungba / Iwaro / Etioro / Ayegunle / Other neighbouring community</td></tr>
+<tr><td>4</td><td>In the past 6 months, how often have you noticed an issue needing attention?</td><td>Multiple choice</td><td>Required: Never / Once / A few times / Frequently / Prefer not to say</td></tr>
+<tr><td>5</td><td>Which kinds of issues most need a reporting channel?</td><td>Checkboxes</td><td>Required: Safety/security / Housing / Water/electricity / Sanitation/environment / Transport/roads / Student-community relations / Other / None or unsure (choose alone)</td></tr>
+<tr><td>6</td><td>Where would you currently report a non-emergency community issue first?</td><td>Multiple choice</td><td>Required: University office / Student representative / Community leader / Social media or messaging group / Friends or family / I do not know / Other</td></tr>
+<tr><td>7</td><td>How satisfied are you with current reporting arrangements?</td><td>Multiple choice</td><td>Required: Very dissatisfied / Dissatisfied / Neutral / Satisfied / Very satisfied / Never used them</td></tr>
+<tr><td>8</td><td>What could stop you from reporting?</td><td>Checkboxes</td><td>Optional: Unclear contact / Fear of exposure or retaliation / No feedback / Difficult process / Data or internet cost / Language or literacy / Nothing (choose alone) / Other</td></tr>
+<tr><td>9</td><td>What device would you usually use?</td><td>Multiple choice</td><td>Required: Smartphone / Computer / Shared or borrowed device / No regular access</td></tr>
+<tr><td>10</td><td>How reliable is your internet access?</td><td>Multiple choice</td><td>Required: Reliable / Sometimes unreliable / Mostly unavailable</td></tr>
+<tr><td>11</td><td>Which features would help you most?</td><td>Checkboxes</td><td>Required: Simple form / Reference tracking / Clear issue categories / Status updates / Local-language guidance / Privacy explanation / Other</td></tr>
+<tr><td>12</td><td>What reporting identity option would you prefer for a future live system?</td><td>Multiple choice</td><td>Required: Anonymous / Name visible only to authorized officers / Named reporting / Unsure</td></tr>
+<tr><td>13</td><td>What response time would you expect for acknowledgment of a non-emergency report?</td><td>Multiple choice</td><td>Required: Same day / Within 2 days / Within a week / Unsure</td></tr>
+<tr><td>14</td><td>Which interface language would you prefer?</td><td>Multiple choice</td><td>Required: English / Yoruba / Both / Other</td></tr>
+<tr><td>15</td><td>What should we improve about reporting?</td><td>Paragraph</td><td>Optional; do not identify individuals or describe sensitive incidents</td></tr>
+</tbody></table>
+<h2>Analysis plan - after genuine responses are received</h2>
+<p>Count respondents by role and community; show counts and percentages with denominators. Keep the Both group distinct to avoid double counting. Summarize current channels, satisfaction and barriers; exclude Never used them from any satisfaction-only average. Checkbox percentages may exceed 100%; flag contradictory selections such as None alongside an issue type. Compare students and indigenes cautiously, especially with small samples. Summarize free-text themes after removing personal details. Report sample size, dates, distribution channels and convenience-sampling limitations. Use the evidence to revise the Ishikawa hypotheses and SRS; do not fabricate responses.</p></section>
+<section><h1>Code listing</h1><h2>app/app.js</h2><pre>&#x27;use strict&#x27;;
+const KEY = &#x27;iro.weekend3.v1&#x27;;
+const $ = selector =&gt; document.querySelector(selector);
+let reports = [];
+let storageReadable = true;
+function notify(message) { $(&#x27;#global-error&#x27;).textContent = message; }
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || &#x27;[]&#x27;);
+  if (!Array.isArray(saved) || saved.some(r =&gt; !r || typeof r.id !== &#x27;string&#x27; || !IRO.transitions[r.status] || !Array.isArray(r.history))) throw new Error(&#x27;Invalid saved data&#x27;);
+  reports = saved;
+} catch { storageReadable = false; notify(&#x27;Saved reports could not be read. Restore or clear this demo site storage in your browser settings and reload. No stored data has been overwritten.&#x27;); }
+function save(next) {
+  if (!storageReadable) { notify(&#x27;Saving is blocked because existing demo storage could not be read. Restore or clear this demo site storage and reload first.&#x27;); return false; }
+  try { localStorage.setItem(KEY, JSON.stringify(next)); reports = next; notify(&#x27;&#x27;); return true; }
+  catch { notify(&#x27;Could not save. Browser storage may be disabled or full. Your change was not saved.&#x27;); return false; }
+}
+function el(tag, content, className) {
+  const element = document.createElement(tag);
+  if (content !== undefined) element.textContent = content;
+  if (className) element.className = className;
+  return element;
+}
+function displayDate(value) { return new Date(value).toLocaleString(); }
+function detail(report) {
+  const box = el(&#x27;article&#x27;, undefined, &#x27;result&#x27;);
+  box.append(el(&#x27;span&#x27;, report.status, &#x27;pill&#x27;), el(&#x27;h3&#x27;, report.title), el(&#x27;p&#x27;, report.id, &#x27;reference&#x27;), el(&#x27;p&#x27;, `${report.community} · ${report.role} · ${report.category} · ${report.priority} priority`, &#x27;meta&#x27;), el(&#x27;p&#x27;, `Location: ${report.location}`), el(&#x27;p&#x27;, report.description), el(&#x27;h4&#x27;, &#x27;Status history&#x27;));
+  const history = el(&#x27;ol&#x27;);
+  for (const item of report.history) history.append(el(&#x27;li&#x27;, `${item.status} — ${displayDate(item.at)}: ${item.note}`));
+  box.append(history);
+  return box;
+}
+document.querySelectorAll(&#x27;[data-tab]&#x27;).forEach(button =&gt; button.addEventListener(&#x27;click&#x27;, () =&gt; {
+  document.querySelectorAll(&#x27;[data-tab]&#x27;).forEach(tab =&gt; {
+    const selected = tab === button;
+    tab.setAttribute(&#x27;aria-selected&#x27;, String(selected));
+    document.getElementById(tab.dataset.tab).hidden = !selected;
+  });
+  if (button.dataset.tab === &#x27;staff&#x27;) renderStaff();
+}));
+$(&#x27;#report-form&#x27;).addEventListener(&#x27;submit&#x27;, event =&gt; {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.target));
+  data.consent = event.target.elements.consent.checked;
+  try {
+    const id = `IRO-${crypto.randomUUID().toUpperCase()}`;
+    const report = IRO.create(data, id, new Date().toISOString());
+    if (!save([...reports, report])) return;
+    const result = $(&#x27;#report-result&#x27;);
+    result.replaceChildren(el(&#x27;h3&#x27;, &#x27;Report saved in this browser&#x27;), el(&#x27;p&#x27;, &#x27;Keep this reference to track progress. This is not a submission to an authority.&#x27;), el(&#x27;p&#x27;, id, &#x27;reference&#x27;));
+    event.target.reset();
+    result.scrollIntoView({ behavior: &#x27;smooth&#x27;, block: &#x27;center&#x27; });
+  } catch (error) { notify(error.message); }
+});
+$(&#x27;#track-form&#x27;).addEventListener(&#x27;submit&#x27;, event =&gt; {
+  event.preventDefault();
+  const reference = event.target.elements.reference.value.trim().toUpperCase();
+  const report = reports.find(item =&gt; item.id === reference);
+  $(&#x27;#track-result&#x27;).replaceChildren(report ? detail(report) : el(&#x27;p&#x27;, &#x27;No matching report in this browser. Check the reference and use the device/browser where you created it.&#x27;, &#x27;empty&#x27;));
+});
+function renderStaff() {
+  const stats = $(&#x27;#stats&#x27;); stats.replaceChildren();
+  for (const status of Object.keys(IRO.transitions)) {
+    const box = el(&#x27;div&#x27;, undefined, &#x27;stat&#x27;);
+    box.append(el(&#x27;strong&#x27;, String(reports.filter(r =&gt; r.status === status).length)), el(&#x27;span&#x27;, status)); stats.append(box);
+  }
+  const list = $(&#x27;#report-list&#x27;); list.replaceChildren();
+  const filter = $(&#x27;#status-filter&#x27;).value;
+  const visible = reports.filter(r =&gt; filter === &#x27;All&#x27; || r.status === filter).slice().reverse();
+  if (!visible.length) list.append(el(&#x27;p&#x27;, &#x27;No reports to display. Submit a fictional issue or add the sample reports.&#x27;, &#x27;empty&#x27;));
+  for (const report of visible) {
+    const card = detail(report); card.className = &#x27;report-card&#x27;;
+    const allowed = IRO.transitions[report.status];
+    if (allowed.length) {
+      const form = el(&#x27;form&#x27;, undefined, &#x27;staff-action&#x27;);
+      const statusLabel = el(&#x27;label&#x27;, &#x27;Next status&#x27;); const select = el(&#x27;select&#x27;);
+      for (const status of allowed) { const option = el(&#x27;option&#x27;, status); option.value = status; select.append(option); }
+      statusLabel.append(select);
+      const noteLabel = el(&#x27;label&#x27;, &#x27;Update note&#x27;); const input = el(&#x27;input&#x27;); input.required = true; input.maxLength = 300; input.placeholder = &#x27;Explain this decision&#x27;; noteLabel.append(input);
+      const button = el(&#x27;button&#x27;, &#x27;Save update&#x27;); button.type = &#x27;submit&#x27;;
+      form.append(statusLabel, noteLabel, button);
+      form.addEventListener(&#x27;submit&#x27;, event =&gt; {
+        event.preventDefault();
+        try {
+          const updated = IRO.update(report, select.value, input.value, new Date().toISOString());
+          if (save(reports.map(r =&gt; r.id === report.id ? updated : r))) renderStaff();
+        } catch (error) { notify(error.message); }
+      }); card.append(form);
+    }
+    list.append(card);
+  }
+}
+$(&#x27;#status-filter&#x27;).addEventListener(&#x27;change&#x27;, renderStaff);
+$(&#x27;#load-demo&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; {
+  const samples = [
+    { id: &#x27;IRO-DEMO-001&#x27;, role: &#x27;Student&#x27;, community: &#x27;Akungba&#x27;, category: &#x27;Water and electricity&#x27;, priority: &#x27;Normal&#x27;, title: &#x27;Fictional broken streetlight&#x27;, location: &#x27;Sample hostel junction&#x27;, description: &#x27;A fictional streetlight has stopped working near the sample hostel junction.&#x27; },
+    { id: &#x27;IRO-DEMO-002&#x27;, role: &#x27;Indigene&#x27;, community: &#x27;Iwaro&#x27;, category: &#x27;Sanitation and environment&#x27;, priority: &#x27;High&#x27;, title: &#x27;Fictional blocked drainage&#x27;, location: &#x27;Sample market road&#x27;, description: &#x27;A fictional blocked drain is causing water to collect along the sample market road.&#x27; }
+  ];
+  const missing = samples.filter(sample =&gt; !reports.some(r =&gt; r.id === sample.id)).map(sample =&gt; IRO.create({ ...sample, consent: true }, sample.id, new Date().toISOString()));
+  if (save([...reports, ...missing])) renderStaff();
+});
+</pre></section>
+<section><h1>Code listing</h1><h2>app/index.html</h2><pre>&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+  &lt;title&gt;IRO | Issues Reporting Outlet&lt;/title&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;styles.css&quot;&gt;
+  &lt;script src=&quot;model.js&quot; defer&gt;&lt;/script&gt;&lt;script src=&quot;app.js&quot; defer&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;header&gt;&lt;a class=&quot;brand&quot; href=&quot;#&quot;&gt;IRO&lt;span&gt;Issues Reporting Outlet&lt;/span&gt;&lt;/a&gt;&lt;span class=&quot;badge&quot;&gt;CSC426 · Weekend 3&lt;/span&gt;&lt;/header&gt;
+&lt;main&gt;
+  &lt;section class=&quot;hero&quot;&gt;&lt;div&gt;&lt;p class=&quot;eyebrow&quot;&gt;AAUA &amp; OUR HOST COMMUNITIES&lt;/p&gt;&lt;h1&gt;A clearer way&lt;br&gt;to raise a concern.&lt;/h1&gt;&lt;p&gt;For students and indigenes of Akungba, Iwaro, Etioro, Ayegunle and neighbouring communities.&lt;/p&gt;&lt;/div&gt;&lt;aside&gt;&lt;span class=&quot;status-dot&quot;&gt;&lt;/span&gt; ACADEMIC PROTOTYPE&lt;p&gt;Reports stay in this browser. They are not sent to AAUA or any authority. Use fictional details only.&lt;/p&gt;&lt;small&gt;For immediate danger, contact appropriate local emergency services directly.&lt;/small&gt;&lt;/aside&gt;&lt;/section&gt;
+  &lt;nav aria-label=&quot;Main views&quot;&gt;&lt;button data-tab=&quot;report&quot; aria-selected=&quot;true&quot;&gt;Report an issue&lt;/button&gt;&lt;button data-tab=&quot;track&quot; aria-selected=&quot;false&quot;&gt;Track a report&lt;/button&gt;&lt;button data-tab=&quot;staff&quot; aria-selected=&quot;false&quot;&gt;Staff demo&lt;/button&gt;&lt;/nav&gt;
+  &lt;section id=&quot;report&quot; class=&quot;panel&quot;&gt;&lt;div class=&quot;section-heading&quot;&gt;&lt;div&gt;&lt;p class=&quot;eyebrow&quot;&gt;01 / MAKE YOUR VOICE HEARD&lt;/p&gt;&lt;h2&gt;Tell us what happened&lt;/h2&gt;&lt;/div&gt;&lt;p&gt;Fields marked * are required.&lt;/p&gt;&lt;/div&gt;
+  &lt;form id=&quot;report-form&quot;&gt;
+    &lt;div class=&quot;grid&quot;&gt;&lt;label&gt;Your community role *&lt;select name=&quot;role&quot; required&gt;&lt;option value=&quot;&quot;&gt;Select a role&lt;/option&gt;&lt;option&gt;Student&lt;/option&gt;&lt;option&gt;Indigene&lt;/option&gt;&lt;option&gt;Both student and indigene&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;label&gt;Community affected *&lt;select name=&quot;community&quot; required&gt;&lt;option value=&quot;&quot;&gt;Select a community&lt;/option&gt;&lt;option&gt;Akungba&lt;/option&gt;&lt;option&gt;Iwaro&lt;/option&gt;&lt;option&gt;Etioro&lt;/option&gt;&lt;option&gt;Ayegunle&lt;/option&gt;&lt;option&gt;Other neighbouring community&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;
+    &lt;label&gt;Issue category *&lt;select name=&quot;category&quot; required&gt;&lt;option value=&quot;&quot;&gt;Select a category&lt;/option&gt;&lt;option&gt;Safety and security&lt;/option&gt;&lt;option&gt;Housing and accommodation&lt;/option&gt;&lt;option&gt;Water and electricity&lt;/option&gt;&lt;option&gt;Sanitation and environment&lt;/option&gt;&lt;option&gt;Transport and roads&lt;/option&gt;&lt;option&gt;Student-community relations&lt;/option&gt;&lt;option&gt;Other&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;label&gt;Priority *&lt;select name=&quot;priority&quot; required&gt;&lt;option&gt;Normal&lt;/option&gt;&lt;option&gt;High&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;/div&gt;
+    &lt;label&gt;Issue title *&lt;input name=&quot;title&quot; required minlength=&quot;5&quot; maxlength=&quot;100&quot; placeholder=&quot;e.g. Broken streetlight near the hostel&quot;&gt;&lt;/label&gt;
+    &lt;label&gt;Location *&lt;input name=&quot;location&quot; required minlength=&quot;3&quot; maxlength=&quot;150&quot; placeholder=&quot;Use a general landmark; avoid private addresses&quot;&gt;&lt;/label&gt;
+    &lt;label&gt;Description *&lt;textarea name=&quot;description&quot; required minlength=&quot;20&quot; maxlength=&quot;2000&quot; rows=&quot;5&quot; placeholder=&quot;Describe the issue and its impact. Do not include names, accusations or sensitive personal information.&quot;&gt;&lt;/textarea&gt;&lt;/label&gt;
+    &lt;label class=&quot;check&quot;&gt;&lt;input name=&quot;consent&quot; type=&quot;checkbox&quot; required&gt; I understand this is a local demo and I am using fictional, non-sensitive information. *&lt;/label&gt;
+    &lt;div class=&quot;form-footer&quot;&gt;&lt;span&gt;No name or matric number is collected from reporters.&lt;/span&gt;&lt;button class=&quot;primary&quot; type=&quot;submit&quot;&gt;Create report &lt;span aria-hidden=&quot;true&quot;&gt;↗&lt;/span&gt;&lt;/button&gt;&lt;/div&gt;
+  &lt;/form&gt;&lt;div id=&quot;report-result&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;&lt;/section&gt;
+  &lt;section id=&quot;track&quot; class=&quot;panel&quot; hidden&gt;&lt;p class=&quot;eyebrow&quot;&gt;02 / FOLLOW THE PROGRESS&lt;/p&gt;&lt;h2&gt;Track your report&lt;/h2&gt;&lt;p&gt;Use the reference shown after submission. Keep it private: anyone using this browser with that reference can view the report.&lt;/p&gt;&lt;form id=&quot;track-form&quot; class=&quot;inline-form&quot;&gt;&lt;label&gt;Report reference&lt;input name=&quot;reference&quot; required maxlength=&quot;50&quot; placeholder=&quot;IRO-…&quot;&gt;&lt;/label&gt;&lt;button type=&quot;submit&quot; class=&quot;primary&quot;&gt;Find report&lt;/button&gt;&lt;/form&gt;&lt;div id=&quot;track-result&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;&lt;/section&gt;
+  &lt;section id=&quot;staff&quot; class=&quot;panel&quot; hidden&gt;&lt;p class=&quot;eyebrow&quot;&gt;03 / STAFF WORKFLOW PREVIEW&lt;/p&gt;&lt;h2&gt;Community issue desk&lt;/h2&gt;&lt;p class=&quot;notice&quot;&gt;Demonstration only. There is no login or access control. Anyone using this browser can view reports and change their status.&lt;/p&gt;&lt;div class=&quot;stats&quot; id=&quot;stats&quot;&gt;&lt;/div&gt;&lt;div class=&quot;filters&quot;&gt;&lt;label&gt;Status filter&lt;select id=&quot;status-filter&quot;&gt;&lt;option&gt;All&lt;/option&gt;&lt;option&gt;Submitted&lt;/option&gt;&lt;option&gt;Under review&lt;/option&gt;&lt;option&gt;Resolved&lt;/option&gt;&lt;option&gt;Rejected&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;button type=&quot;button&quot; id=&quot;load-demo&quot;&gt;Add fictional sample reports&lt;/button&gt;&lt;/div&gt;&lt;div id=&quot;report-list&quot;&gt;&lt;/div&gt;&lt;/section&gt;
+  &lt;p id=&quot;global-error&quot; class=&quot;error&quot; role=&quot;alert&quot;&gt;&lt;/p&gt;
+&lt;/main&gt;
+&lt;footer&gt;&lt;span&gt;Temidayo Ayomide Falomo · 220404260&lt;/span&gt;&lt;span&gt;IRO / CSC426 academic project&lt;/span&gt;&lt;/footer&gt;
+&lt;/body&gt;&lt;/html&gt;
+</pre></section>
+<section><h1>Code listing</h1><h2>app/model.js</h2><pre>/* Shared validation and state rules. Browser demo; no authentication or server. */
+(function (root) {
+  &#x27;use strict&#x27;;
+  const roles = [&#x27;Student&#x27;, &#x27;Indigene&#x27;, &#x27;Both student and indigene&#x27;];
+  const communities = [&#x27;Akungba&#x27;, &#x27;Iwaro&#x27;, &#x27;Etioro&#x27;, &#x27;Ayegunle&#x27;, &#x27;Other neighbouring community&#x27;];
+  const categories = [&#x27;Safety and security&#x27;, &#x27;Housing and accommodation&#x27;, &#x27;Water and electricity&#x27;, &#x27;Sanitation and environment&#x27;, &#x27;Transport and roads&#x27;, &#x27;Student-community relations&#x27;, &#x27;Other&#x27;];
+  const transitions = { Submitted: [&#x27;Under review&#x27;, &#x27;Rejected&#x27;], &#x27;Under review&#x27;: [&#x27;Resolved&#x27;, &#x27;Rejected&#x27;], Resolved: [], Rejected: [] };
+  function validate(data) {
+    if (!roles.includes(data.role)) throw new Error(&#x27;Select a valid community role.&#x27;);
+    if (!communities.includes(data.community)) throw new Error(&#x27;Select a valid community.&#x27;);
+    if (!categories.includes(data.category)) throw new Error(&#x27;Select a valid issue category.&#x27;);
+    if (![&#x27;Normal&#x27;, &#x27;High&#x27;].includes(data.priority)) throw new Error(&#x27;Select a valid priority.&#x27;);
+    for (const [field, min, max] of [[&#x27;title&#x27;, 5, 100], [&#x27;location&#x27;, 3, 150], [&#x27;description&#x27;, 20, 2000]]) {
+      if (typeof data[field] !== &#x27;string&#x27; || data[field].trim().length &lt; min || data[field].trim().length &gt; max) throw new Error(`${field} must contain ${min}-${max} characters.`);
+    }
+    if (data.consent !== true) throw new Error(&#x27;Confirm the fictional-data notice.&#x27;);
+    return Object.fromEntries([&#x27;role&#x27;, &#x27;community&#x27;, &#x27;category&#x27;, &#x27;priority&#x27;, &#x27;title&#x27;, &#x27;location&#x27;, &#x27;description&#x27;].map(key =&gt; [key, data[key].trim()]));
+  }
+  function create(data, id, now) {
+    return { ...validate(data), id, status: &#x27;Submitted&#x27;, createdAt: now, history: [{ status: &#x27;Submitted&#x27;, at: now, note: &#x27;Report created.&#x27; }] };
+  }
+  function update(report, status, note, now) {
+    if (!transitions[report.status]?.includes(status)) throw new Error(&#x27;That status change is not permitted.&#x27;);
+    if (typeof note !== &#x27;string&#x27; || !note.trim() || note.trim().length &gt; 300) throw new Error(&#x27;Add an update note of 1-300 characters.&#x27;);
+    return { ...report, status, history: [...report.history, { status, at: now, note: note.trim() }] };
+  }
+  const api = { roles, communities, categories, transitions, validate, create, update };
+  if (typeof module !== &#x27;undefined&#x27; &amp;&amp; module.exports) module.exports = api;
+  else root.IRO = api;
+})(typeof globalThis !== &#x27;undefined&#x27; ? globalThis : this);
+</pre></section>
+<section><h1>Code listing</h1><h2>app/styles.css</h2><pre>:root{--ink:#173c37;
+  --muted:#64716c;
+  --paper:#f4f5ef;
+  --accent:#d9f078;
+  --border:#d9dfd4}
+*{box-sizing:border-box}
+body{margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:16px/1.6 system-ui,sans-serif}
+header,main,footer{max-width:1120px;
+  margin:auto}
+header{padding:28px 30px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid var(--border)}
+.brand{font-size:30px;
+  font-weight:850;
+  letter-spacing:-2px;
+  text-decoration:none;
+  color:inherit;
+  display:flex;
+  gap:16px;
+  align-items:center}
+.brand span{max-width:110px;
+  font-size:11px;
+  line-height:1.3;
+  letter-spacing:0;
+  text-transform:uppercase}
+.badge,.eyebrow{font-size:11px;
+  font-weight:750;
+  letter-spacing:1.5px}
+.badge{border:1px solid var(--border);
+  border-radius:30px;
+  padding:8px 12px}
+main{padding:0 30px}
+.hero{display:grid;
+  grid-template-columns:1.6fr 1fr;
+  gap:60px;
+  padding:52px 0 40px;
+  align-items:center}
+h1{font-size:clamp(36px,5vw,60px);
+  letter-spacing:-2.5px;
+  line-height:1.08;
+  margin:15px 0 22px}
+h2{font-size:28px;
+  letter-spacing:-.8px;
+  margin:4px 0 12px}
+.hero&gt;div&gt;p:last-child{max-width:540px;
+  color:var(--muted)}
+aside{background:#e7ecdc;
+  border:1px solid var(--border);
+  padding:25px;
+  border-radius:16px;
+  font-size:12px;
+  letter-spacing:.7px}
+aside p{font-size:15px;
+  letter-spacing:0}
+aside small{letter-spacing:0}
+.status-dot{display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#3b7656;
+  margin-right:8px}
+nav{display:flex;
+  gap:8px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:24px;
+  padding-bottom:15px}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:white;
+  color:var(--ink);
+  padding:10px 18px;
+  font-size:14px;
+  font-weight:650}
+nav button[aria-selected=true],.primary{background:var(--ink);
+  color:white;
+  border-color:var(--ink)}
+button:hover{filter:brightness(.95)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #648228;
+  outline-offset:3px}
+.panel{background:#fff;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px;
+  margin-bottom:35px}
+.section-heading{display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px}
+.section-heading&gt;p,.form-footer&gt;span{font-size:12px;
+  color:var(--muted)}
+label{display:flex;
+  flex-direction:column;
+  gap:7px;
+  font-size:13px;
+  font-weight:650;
+  margin:16px 0}
+input,select,textarea{width:100%;
+  background:#fafbf8;
+  border:1px solid var(--border);
+  padding:12px;
+  border-radius:7px;
+  color:var(--ink);
+  font-size:14px}
+textarea{resize:vertical}
+.grid{display:grid;
+  grid-template-columns:1fr 1fr;
+  column-gap:24px}
+.check{flex-direction:row;
+  align-items:flex-start;
+  font-weight:400;
+  gap:10px}
+.check input{width:18px;
+  margin-top:4px;
+  flex-shrink:0}
+.form-footer{display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-top:1px solid var(--border);
+  padding-top:20px;
+  gap:20px}
+.primary{padding:12px 22px}
+.primary span{margin-left:20px}
+.inline-form{display:flex;
+  align-items:flex-end;
+  gap:12px}
+.inline-form label{flex:1;
+  margin-bottom:0}
+.notice,.result,.empty{padding:16px;
+  background:#f2f5e9;
+  border-radius:8px}
+.result{margin-top:20px;
+  overflow-wrap:anywhere}
+.result p{white-space:pre-wrap}
+.reference{font-family:monospace;
+  font-size:17px;
+  font-weight:700}
+.stats{display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin:24px 0}
+.stat{border:1px solid var(--border);
+  padding:15px;
+  border-radius:8px}
+.stat strong{display:block;
+  font-size:28px}
+.stat span{font-size:12px}
+.filters{display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px}
+.filters label{width:220px}
+.report-card{border-top:1px solid var(--border);
+  padding:20px 0}
+.report-card h3{margin:8px 0}
+.meta{font-size:12px;
+  color:var(--muted)}
+.report-card p{white-space:pre-wrap;
+  overflow-wrap:anywhere}
+.staff-action{display:flex;
+  align-items:flex-end;
+  gap:12px;
+  flex-wrap:wrap}
+.staff-action label{flex:1;
+  min-width:170px;
+  margin:0}
+.staff-action input{min-width:200px}
+.pill{display:inline-block;
+  font-size:11px;
+  background:#e7ecdc;
+  border-radius:20px;
+  padding:4px 10px}
+.error{color:#a23131}
+footer{padding:22px 30px 35px;
+  font-size:11px;
+  color:var(--muted);
+  display:flex;
+  justify-content:space-between;
+  gap:20px}
+[hidden]{display:none!important}
+@media(max-width:650px){header{padding:20px}
+.badge{font-size:9px}
+.brand{font-size:25px}
+main{padding:0 18px}
+.hero{grid-template-columns:1fr;
+  gap:15px;
+  padding:30px 0}
+.hero aside{padding:18px}
+nav{gap:5px}
+nav button{flex:1;
+  padding:10px 7px;
+  font-size:12px}
+.panel{padding:20px}
+.grid{grid-template-columns:1fr}
+.section-heading{align-items:flex-start;
+  flex-direction:column;
+  gap:0}
+.form-footer{align-items:flex-start;
+  flex-direction:column}
+.form-footer button{width:100%}
+.stats{grid-template-columns:1fr 1fr}
+.inline-form,.filters{align-items:stretch;
+  flex-direction:column}
+.filters label{width:100%}
+.inline-form button{margin-top:5px}
+footer{flex-direction:column;
+  gap:0;
+  padding:20px}
+}
+
+</pre></section>
+<section><h1>Code listing</h1><h2>questionnaire/create-google-form.gs</h2><pre>/** Run in Google Apps Script. Creates a Form and linked Sheet; does not distribute. */
+function createIroQuestionnaire() {
+  const properties = PropertiesService.getScriptProperties();
+  const existingId = properties.getProperty(&#x27;IRO_FORM_ID&#x27;);
+  if (existingId) {
+    const existing = FormApp.openById(existingId);
+    console.log(&#x27;Existing edit URL: &#x27; + existing.getEditUrl());
+    console.log(&#x27;Respondent URL: &#x27; + existing.getPublishedUrl());
+    console.log(&#x27;Linked spreadsheet ID: &#x27; + existing.getDestinationId());
+    return;
+  }
+  const form = FormApp.create(&#x27;IRO: AAUA Students and Host-Community Reporting Needs&#x27;);
+  // Store early to avoid duplicate forms if a later call fails. Inspect incomplete
+  // forms before clearing this property and retrying a failed first run.
+  properties.setProperty(&#x27;IRO_FORM_ID&#x27;, form.getId());
+  form.setDescription(&#x27;Temidayo Ayomide Falomo | 220404260 | CSC426. Voluntary academic survey (3-5 minutes). Do not provide names, matric numbers, phone numbers, private addresses, accusations or sensitive incident details. You may exit without submitting. Responses are stored in the researcher\&#x27;s Google account for academic review. Agree and disclose a retention period before distributing. This is not a complaints or emergency service.&#x27;);
+  form.setCollectEmail(false);
+  form.setConfirmationMessage(&#x27;Thank you. This survey records preferences, not an official issue report.&#x27;);
+  const consent = form.addMultipleChoiceItem().setTitle(&#x27;Do you voluntarily agree to participate?&#x27;).setRequired(true);
+  const questions = form.addPageBreakItem().setTitle(&#x27;Your community and reporting needs&#x27;);
+  consent.setChoices([
+    consent.createChoice(&#x27;Yes, continue&#x27;, questions),
+    consent.createChoice(&#x27;No, end questionnaire&#x27;, FormApp.PageNavigationType.SUBMIT)
+  ]);
+  function mc(title, values) { form.addMultipleChoiceItem().setTitle(title).setChoiceValues(values).setRequired(true); }
+  function checks(title, values, required) { form.addCheckboxItem().setTitle(title).setChoiceValues(values).setRequired(required); }
+  mc(&#x27;Which best describes your relationship to the community?&#x27;, [&#x27;AAUA student&#x27;, &#x27;Indigene&#x27;, &#x27;Both AAUA student and indigene&#x27;, &#x27;Neither&#x27;]);
+  mc(&#x27;Which community do your answers mainly relate to?&#x27;, [&#x27;Akungba&#x27;, &#x27;Iwaro&#x27;, &#x27;Etioro&#x27;, &#x27;Ayegunle&#x27;, &#x27;Other neighbouring community&#x27;]);
+  mc(&#x27;In the past 6 months, how often have you noticed an issue needing attention?&#x27;, [&#x27;Never&#x27;, &#x27;Once&#x27;, &#x27;A few times&#x27;, &#x27;Frequently&#x27;, &#x27;Prefer not to say&#x27;]);
+  checks(&#x27;Which kinds of issues most need a reporting channel?&#x27;, [&#x27;Safety/security&#x27;, &#x27;Housing&#x27;, &#x27;Water/electricity&#x27;, &#x27;Sanitation/environment&#x27;, &#x27;Transport/roads&#x27;, &#x27;Student-community relations&#x27;, &#x27;Other&#x27;, &#x27;None or unsure (choose alone)&#x27;], true);
+  mc(&#x27;Where would you currently report a non-emergency community issue first?&#x27;, [&#x27;University office&#x27;, &#x27;Student representative&#x27;, &#x27;Community leader&#x27;, &#x27;Social media or messaging group&#x27;, &#x27;Friends or family&#x27;, &#x27;I do not know&#x27;, &#x27;Other&#x27;]);
+  mc(&#x27;How satisfied are you with current reporting arrangements?&#x27;, [&#x27;Very dissatisfied&#x27;, &#x27;Dissatisfied&#x27;, &#x27;Neutral&#x27;, &#x27;Satisfied&#x27;, &#x27;Very satisfied&#x27;, &#x27;Never used them&#x27;]);
+  checks(&#x27;What could stop you from reporting?&#x27;, [&#x27;Unclear contact&#x27;, &#x27;Fear of exposure or retaliation&#x27;, &#x27;No feedback&#x27;, &#x27;Difficult process&#x27;, &#x27;Data or internet cost&#x27;, &#x27;Language or literacy&#x27;, &#x27;Nothing (choose alone)&#x27;, &#x27;Other&#x27;], false);
+  mc(&#x27;What device would you usually use?&#x27;, [&#x27;Smartphone&#x27;, &#x27;Computer&#x27;, &#x27;Shared or borrowed device&#x27;, &#x27;No regular access&#x27;]);
+  mc(&#x27;How reliable is your internet access?&#x27;, [&#x27;Reliable&#x27;, &#x27;Sometimes unreliable&#x27;, &#x27;Mostly unavailable&#x27;]);
+  checks(&#x27;Which features would help you most?&#x27;, [&#x27;Simple form&#x27;, &#x27;Reference tracking&#x27;, &#x27;Clear issue categories&#x27;, &#x27;Status updates&#x27;, &#x27;Local-language guidance&#x27;, &#x27;Privacy explanation&#x27;, &#x27;Other&#x27;], true);
+  mc(&#x27;What reporting identity option would you prefer for a future live system?&#x27;, [&#x27;Anonymous&#x27;, &#x27;Name visible only to authorized officers&#x27;, &#x27;Named reporting&#x27;, &#x27;Unsure&#x27;]);
+  mc(&#x27;What response time would you expect for acknowledgment of a non-emergency report?&#x27;, [&#x27;Same day&#x27;, &#x27;Within 2 days&#x27;, &#x27;Within a week&#x27;, &#x27;Unsure&#x27;]);
+  mc(&#x27;Which interface language would you prefer?&#x27;, [&#x27;English&#x27;, &#x27;Yoruba&#x27;, &#x27;Both&#x27;, &#x27;Other&#x27;]);
+  form.addParagraphTextItem().setTitle(&#x27;What should we improve about reporting?&#x27;).setHelpText(&#x27;Optional. Do not identify individuals or describe sensitive incidents.&#x27;).setRequired(false);
+  const sheet = SpreadsheetApp.create(&#x27;IRO Questionnaire Responses - 220404260&#x27;);
+  form.setDestination(FormApp.DestinationType.SPREADSHEET, sheet.getId());
+  console.log(&#x27;Edit URL: &#x27; + form.getEditUrl());
+  console.log(&#x27;Respondent URL: &#x27; + form.getPublishedUrl());
+  console.log(&#x27;Response spreadsheet: &#x27; + sheet.getUrl());
+  console.log(&#x27;Preview and check responder access/publication settings before sharing.&#x27;);
+}
+</pre></section>
+<section><h1>Code listing</h1><h2>tests/model.test.cjs</h2><pre>const test = require(&#x27;node:test&#x27;);
+const assert = require(&#x27;node:assert/strict&#x27;);
+const IRO = require(&#x27;../app/model.js&#x27;);
+const input = { role: &#x27;Student&#x27;, community: &#x27;Akungba&#x27;, category: &#x27;Water and electricity&#x27;, priority: &#x27;Normal&#x27;, title: &#x27;Broken streetlight&#x27;, location: &#x27;Sample road&#x27;, description: &#x27;A fictional streetlight is broken along the sample road.&#x27;, consent: true };
+const now = &#x27;2026-10-19T10:00:00Z&#x27;;
+test(&#x27;creates a report with initial history and only permitted fields&#x27;, () =&gt; {
+  const r = IRO.create({ ...input, status: &#x27;Resolved&#x27;, malicious: true }, &#x27;IRO-1&#x27;, now);
+  assert.equal(r.status, &#x27;Submitted&#x27;); assert.equal(r.history.length, 1); assert.equal(r.malicious, undefined);
+});
+test(&#x27;rejects invalid roles, missing consent and whitespace-only descriptions&#x27;, () =&gt; {
+  for (const patch of [{ role: &#x27;Unknown&#x27; }, { consent: false }, { description: &#x27; &#x27;.repeat(25) }, { priority: &#x27;Emergency&#x27; }]) assert.throws(() =&gt; IRO.validate({ ...input, ...patch }));
+});
+test(&#x27;accepts indigenes and people in both groups&#x27;, () =&gt; {
+  for (const role of [&#x27;Indigene&#x27;, &#x27;Both student and indigene&#x27;]) assert.equal(IRO.validate({ ...input, role }).role, role);
+});
+test(&#x27;preserves audit history and original report during valid transitions&#x27;, () =&gt; {
+  const original = IRO.create(input, &#x27;IRO-1&#x27;, now);
+  const reviewed = IRO.update(original, &#x27;Under review&#x27;, &#x27;Assigned for review.&#x27;, now);
+  const resolved = IRO.update(reviewed, &#x27;Resolved&#x27;, &#x27;Fictional repair completed.&#x27;, now);
+  assert.equal(original.status, &#x27;Submitted&#x27;); assert.equal(resolved.history.length, 3);
+});
+test(&#x27;blocks skipped transitions and terminal-state changes&#x27;, () =&gt; {
+  const r = IRO.create(input, &#x27;IRO-1&#x27;, now);
+  assert.throws(() =&gt; IRO.update(r, &#x27;Resolved&#x27;, &#x27;Skip review&#x27;, now));
+  const rejected = IRO.update(r, &#x27;Rejected&#x27;, &#x27;Duplicate demo report.&#x27;, now);
+  assert.throws(() =&gt; IRO.update(rejected, &#x27;Under review&#x27;, &#x27;Reopen&#x27;, now));
+});
+test(&#x27;requires a bounded explanation for status changes&#x27;, () =&gt; {
+  const r = IRO.create(input, &#x27;IRO-1&#x27;, now);
+  for (const note of [&#x27;&#x27;, &#x27;   &#x27;, &#x27;x&#x27;.repeat(301)]) assert.throws(() =&gt; IRO.update(r, &#x27;Under review&#x27;, note, now));
+});
+</pre></section>
+</body></html>
